@@ -32,6 +32,12 @@ SKSE_PLUGIN_LOAD(const SKSE::LoadInterface* skse)
 
 	spdlog::set_pattern("[%H:%M:%S:%e] [%l] %v"s);
 
+    if (skse == nullptr) {
+        return false;
+    }
+
+    SKSE::Init(skse);
+
 	SKSE::log::info("Game version: {}", skse->RuntimeVersion());
 
 	auto messaging = SKSE::GetMessagingInterface();
