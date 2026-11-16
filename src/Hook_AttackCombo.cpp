@@ -33,10 +33,15 @@ namespace SCAR
 
 	EventResult AnimEventHook::ProcessEvent(RE::BSTEventSink<RE::BSAnimationGraphEvent>* a_sink, RE::BSAnimationGraphEvent* a_event, RE::BSTEventSource<RE::BSAnimationGraphEvent>* a_eventSource)
 	{
+		if (!a_event) {
+			return _ProcessEvent(a_sink, a_event, a_eventSource);
+		}
+
 		const auto holder = a_event->holder;
 		auto actor = holder ? holder->As<RE::Actor>() : nullptr;
-		if (!a_event || !actor)
+		if (!actor) {
 			return _ProcessEvent(a_sink, a_event, a_eventSource);
+		}
 
 		auto& actorRuntime = actor->GetActorRuntimeData();
 		auto combatTarg = actorRuntime.currentCombatTarget.get();
@@ -47,15 +52,19 @@ namespace SCAR
 			auto combatbehaviorCtrl = actorRuntime.combatController ? actorRuntime.combatController->behaviorController : nullptr;
 			if (scarClip && combatbehaviorCtrl) {
 				for (auto thread : combatbehaviorCtrl->activeThreads) {
+					if (!thread)
+						continue;
+
 					auto currentNode = const_cast<RE::CombatBehaviorTreeNode*>(thread->currentNode);
-					if (thread && currentNode) {
-						const auto nodeName = currentNode->GetName();
-						if (_strcmpi(nodeName.c_str(), "attack") == 0) {
-							auto context = thread->GetCurrentObject<RE::CombatBehaviorContextMelee>();
-							if (context) {
-								PerformSCARAttack(actor, combatTarg.get(), scarClip, context);
-								break;
-							}
+					if (!currentNode)
+						continue;
+
+					const auto nodeName = currentNode->GetName();
+					if (_strcmpi(nodeName.c_str(), "attack") == 0) {
+						auto context = thread->GetCurrentObject<RE::CombatBehaviorContextMelee>();
+						if (context) {
+							PerformSCARAttack(actor, combatTarg.get(), scarClip, context);
+							break;
 						}
 					}
 				}
