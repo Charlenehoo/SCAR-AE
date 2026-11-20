@@ -109,10 +109,45 @@ namespace SCAR
 					if (!thread)
 						continue;
 
+					// ============================================================================
+					// currentNode gate（从 7fb5818 恢复），用 1.7.104 真实布局直读 name 字段。
+					//
+					// 依据：
+					//   - CPR（跑在 1.7.104 上正常）的 RE/CombatBehaviorTreeNode.h:
+					//       BSFixedString name;  // +0x08
+					//   - CombatBehaviorTreeNode vtable slot 1 (GetName) 在 1.7.104 上返回 char*，
+					//     不是 CommonLibVR 声明的 const BSFixedString&。
+					//   - 调用 GetName() 会把 char* 当 &BSFixedString 解引用 → 读 [ptr] 得垃圾 →
+					//     崩溃地址 RCX=0x50207461626D6F43 = "Combat P..." (CPR 注入的字符串首 8 字节)。
+					//   - 直读 name 字段不经 vtable，不受该 ABI 漂移影响。
+					// ============================================================================
+					const auto* currentNode = thread->currentNode;
+					if (!currentNode)
+						continue;
+
+					// ---- 临时诊断探针（B2 验证，测完删）----
+					{
+						static std::atomic<int> s_probe{ 0 };
+						if (s_probe.fetch_add(1) < 20) {
+							const auto nodeAddr = reinterpret_cast<std::uintptr_t>(currentNode);
+							const auto vtable = *reinterpret_cast<const std::uintptr_t*>(nodeAddr);
+							const auto slot1 = *reinterpret_cast<const std::uintptr_t*>(vtable + 8);
+							const char* n = currentNode->name.c_str();
+							SKSE::log::info(
+								"[SCARPROBE] built={} node=0x{:X} vtable=0x{:X} slot1=0x{:X} name=\"{}\"",
+								__TIMESTAMP__, nodeAddr, vtable, slot1, n ? n : "(null)");
+						}
+					}
+					// ---- END 诊断探针 ----
+
+					const char* nodeName = currentNode->name.c_str();
+					if (!nodeName || _strcmpi(nodeName, "attack") != 0)
+						continue;
+
 					auto context = thread->GetCurrentObject<RE::CombatBehaviorContextMelee>();
 					if (context) {
 						if (PerformSCARAttack(actor, combatTarg.get(), scarClip, context)) {
-							break;  // Only break on successful execution (true positive)
+							break;  // 只在成功时 break（4e84ac9 保留）
 						}
 					}
 				}
