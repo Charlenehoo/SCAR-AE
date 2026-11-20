@@ -33,10 +33,14 @@ namespace SCAR
 
 	EventResult AnimEventHook::ProcessEvent(RE::BSTEventSink<RE::BSAnimationGraphEvent>* a_sink, RE::BSAnimationGraphEvent* a_event, RE::BSTEventSource<RE::BSAnimationGraphEvent>* a_eventSource)
 	{
+		if (!a_event) {
+			return _ProcessEvent(a_sink, a_event, a_eventSource);
+		}
 		const auto holder = a_event->holder;
 		auto actor = holder ? holder->As<RE::Actor>() : nullptr;
-		if (!a_event || !actor)
+		if (!actor) {
 			return _ProcessEvent(a_sink, a_event, a_eventSource);
+		}
 
 		auto& actorRuntime = actor->GetActorRuntimeData();
 		auto combatTarg = actorRuntime.currentCombatTarget.get();
@@ -44,6 +48,12 @@ namespace SCAR
 
 		if (highProcess && combatTarg && _strcmpi("SCAR_ComboStart", a_event->tag.c_str()) == 0 && actor->IsAttacking() && ShouldNextAttack(a_event->payload.c_str())) {
 			auto scarClip = DataHandler::GetSCARDataClip(actor);
+			if (scarClip) {
+				std::string_view clipName{ scarClip->animationName.c_str() };
+				if (clipName.find("Dummy") != std::string_view::npos) {
+					return _ProcessEvent(a_sink, a_event, a_eventSource);
+				}
+			}
 			auto combatbehaviorCtrl = actorRuntime.combatController ? actorRuntime.combatController->behaviorController : nullptr;
 			if (scarClip && combatbehaviorCtrl) {
 				for (auto thread : combatbehaviorCtrl->activeThreads) {

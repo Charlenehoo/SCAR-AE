@@ -7,7 +7,6 @@ namespace SCAR
 	public:
 		static void InstallHook()
 		{
-			SKSE::AllocTrampoline(1 << 5);
 			auto& trampoline = SKSE::GetTrampoline();
 
 			REL::Relocation<std::uintptr_t> CombatBehaviorAttackBase{ RELOCATION_ID(48147, 49178) };  //1.5.97 14080D8C0

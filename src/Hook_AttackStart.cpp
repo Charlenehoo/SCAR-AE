@@ -49,10 +49,16 @@ namespace SCAR
 	bool AIAttackStartHook::StartAttack(RE::CombatBehaviorContextMelee* a_context)
 	{
 		const auto attacker = GetAttacker();
+		if (attacker && attacker->IsPlayerRef()) {
+			return _StartAttack(a_context);
+		}
+
 		const auto target = GetTarget();
 		const auto scarClip = attacker ? DataHandler::GetSCARDataClip(attacker) : nullptr;
 		if (scarClip && target) {
-			return PerformSCARAttack(attacker, target, scarClip, a_context);
+			if (PerformSCARAttack(attacker, target, scarClip, a_context)) {
+				return true;
+			}
 		}
 
 		return _StartAttack(a_context);
