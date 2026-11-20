@@ -47,16 +47,21 @@ namespace SCAR
 			auto combatbehaviorCtrl = actorRuntime.combatController ? actorRuntime.combatController->behaviorController : nullptr;
 			if (scarClip && combatbehaviorCtrl) {
 				for (auto thread : combatbehaviorCtrl->activeThreads) {
+					if (!thread) {
+						continue;
+					}
 					auto currentNode = const_cast<RE::CombatBehaviorTreeNode*>(thread->currentNode);
-					if (thread && currentNode) {
-						const auto nodeName = currentNode->GetName();
-						if (_strcmpi(nodeName.c_str(), "attack") == 0) {
-							auto context = thread->GetCurrentObject<RE::CombatBehaviorContextMelee>();
-							if (context) {
-								PerformSCARAttack(actor, combatTarg.get(), scarClip, context);
-								break;
-							}
-						}
+					if (!currentNode) {
+						continue;
+					}
+					const char* nodeName = currentNode->name.c_str();
+					if (!nodeName || _strcmpi(nodeName, "attack") != 0) {
+						continue;
+					}
+					auto context = thread->GetCurrentObject<RE::CombatBehaviorContextMelee>();
+					if (context) {
+						PerformSCARAttack(actor, combatTarg.get(), scarClip, context);
+						break;
 					}
 				}
 			}
