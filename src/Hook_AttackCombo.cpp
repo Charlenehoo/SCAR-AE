@@ -41,6 +41,8 @@ namespace SCAR
 		if (!actor) {
 			return _ProcessEvent(a_sink, a_event, a_eventSource);
 		}
+		if (actor->IsPlayerRef())
+			return _ProcessEvent(a_sink, a_event, a_eventSource);
 
 		auto& actorRuntime = actor->GetActorRuntimeData();
 		auto combatTarg = actorRuntime.currentCombatTarget.get();
@@ -70,6 +72,19 @@ namespace SCAR
 					}
 					auto context = thread->GetCurrentObject<RE::CombatBehaviorContextMelee>();
 					if (context) {
+						// ===== JITTER PROBE (REVERT) =====
+						if (actor->IsPlayerRef() || (combatTarg && combatTarg->IsPlayerRef())) {
+							static std::atomic<int> s_n{ 0 };
+							if (s_n.fetch_add(1) < 100) {
+								SKSE::log::warn("[JITTER] Combo path: attacker={:X}(player={}) targ={:X}(player={}) clip=\"{}\"",
+									actor->formID, actor->IsPlayerRef(),
+									combatTarg ? combatTarg->formID : 0,
+									combatTarg ? combatTarg->IsPlayerRef() : false,
+									scarClip ? scarClip->animationName.c_str() : "(null)");
+							}
+						}
+						// ===== END =====
+
 						PerformSCARAttack(actor, combatTarg.get(), scarClip, context);
 						break;
 					}

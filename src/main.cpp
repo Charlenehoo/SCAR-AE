@@ -40,7 +40,7 @@ SKSE_PLUGIN_LOAD(const SKSE::LoadInterface* skse)
 
 	SKSE::log::info("Game version: {}", skse->RuntimeVersion());
 
-	SKSE::AllocTrampoline(1 << 8);
+	SKSE::AllocTrampoline(1 << 12);
 
 	auto messaging = SKSE::GetMessagingInterface();
 	messaging->RegisterListener(SCAR::EventCallback);

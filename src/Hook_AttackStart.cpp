@@ -56,6 +56,17 @@ namespace SCAR
 		const auto target = GetTarget();
 		const auto scarClip = attacker ? DataHandler::GetSCARDataClip(attacker) : nullptr;
 		if (scarClip && target) {
+			// ===== JITTER PROBE (REVERT) =====
+			if (target && target->IsPlayerRef()) {
+				static std::atomic<int> s_n{ 0 };
+				if (s_n.fetch_add(1) < 100) {
+					SKSE::log::warn("[JITTER] StartAttack path: attacker={:X}(player={}) targ={:X}(player={})",
+						attacker ? attacker->formID : 0, attacker ? attacker->IsPlayerRef() : false,
+						target->formID, target->IsPlayerRef());
+				}
+			}
+			// ===== END =====
+
 			if (PerformSCARAttack(attacker, target, scarClip, a_context)) {
 				return true;
 			}

@@ -152,6 +152,19 @@ namespace SCAR
 		if (!a_attacker || !a_target || !a_attacker->GetActorRuntimeData().currentProcess)
 			return false;
 
+		// ===== JITTER PROBE (REVERT) =====
+		if (a_attacker->IsPlayerRef() || a_target->IsPlayerRef()) {
+			static std::atomic<int> s_n{ 0 };
+			if (s_n.fetch_add(1) < 100) {
+				SKSE::log::warn("[JITTER] SpecialIdle: attacker={:X}(player={}) target={:X}(player={}) idleEditorID=\"{}\" animEvent=\"{}\"",
+					a_attacker->formID, a_attacker->IsPlayerRef(),
+					a_target->formID, a_target->IsPlayerRef(),
+					a_Idle ? a_Idle->GetFormEditorID() : "(null)",
+					a_Idle ? a_Idle->animEventName.c_str() : "(null)");
+			}
+		}
+		// ===== END =====
+
 		if (!a_Idle->CheckConditions(a_attacker, a_target, false)) {
 			return false;
 		}
